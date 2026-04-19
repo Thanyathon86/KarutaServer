@@ -1,0 +1,79 @@
+// KarutaApp — Prisma Schema (Prisma 7)
+// ─────────────────────────────────────────────────────────────
+// url ถูกย้ายไปที่ prisma.config.ts แล้ว — ห้ามใส่ตรงนี้
+// Run:  npx prisma migrate dev
+// ─────────────────────────────────────────────────────────────
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─── User ────────────────────────────────────────────────────
+
+model User {
+  id           String        @id @default(uuid()) @db.Uuid
+  email        String        @unique
+  passwordHash String
+  displayName  String
+  createdAt    DateTime      @default(now())
+  gameSessions GameSession[]
+}
+
+// ─── GameSession ─────────────────────────────────────────────
+
+model GameSession {
+  id               String     @id @default(uuid()) @db.Uuid
+  userId           String     @db.Uuid
+  difficulty       Difficulty
+  memoTimeSec      Int
+  durationMs       Int        // เวลาเล่นทั้งหมด (ms)
+  playerFinalCount Int
+  cpuFinalCount    Int
+  winner           Winner
+  acquiredOT       Int        // ไพ่ที่ตบได้จากฝั่ง CPU
+  acquiredYT       Int        // ไพ่ที่ตบได้จากฝั่งตัวเอง
+  foulsCount       Int        // จำนวนฟาล์ว
+  createdAt        DateTime   @default(now())
+
+  user        User         @relation(fields: [userId], references: [id])
+  cardResults CardResult[]
+}
+
+// ─── CardResult ───────────────────────────────────────────────
+
+model CardResult {
+  id          String      @id @default(uuid()) @db.Uuid
+  sessionId   String      @db.Uuid
+  cardId      Int
+  isCorrect   Boolean
+  reactionMs  Int
+  tappedAfter TappedAfter
+  wasDeadCard Boolean
+  gotPenalty  Boolean
+
+  session GameSession @relation(fields: [sessionId], references: [id])
+}
+
+// ─── Enums ────────────────────────────────────────────────────
+
+enum Difficulty {
+  easy
+  normal
+  hard
+}
+
+enum Winner {
+  player
+  cpu
+}
+
+enum TappedAfter {
+  kami
+  shimo
+  none
+}
